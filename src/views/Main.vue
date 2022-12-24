@@ -11,8 +11,6 @@ let inputAddress = "0x1234567890123456789012345678901234567890";
 onMounted(async () => {
   let transactions = await getTransactions(inputAddress);
 
-  console.log(transactions);
-
   const shapePattern = {
     type: "hexagon",
     scale: 1,
@@ -45,47 +43,14 @@ onMounted(async () => {
 
   graph.links = links;
   graph.nodes = nodes;
-console.log(graph);
+
   const svgDraw = document.getElementById("svgDraw");
+
   const simulation = new ForceSimulation(svgDraw);
+  simulation.envGravity = -100;
   simulation.templateStore.add("hexagon", Hexagon);
   simulation.render(graph);
 });
-
-const a: Graph = {
-  nodes: [
-    {
-      id: "node1",
-      shape: {
-        type: "hexagon",
-        scale: 1,
-      },
-      payload: {
-        title: "My Node 1",
-        color: "#9575cd",
-      },
-    },
-    {
-      id: "node2",
-      shape: {
-        type: "hexagon",
-        scale: 1,
-      },
-      payload: {
-        title: "My Node 15151616777777",
-        color: "blue",
-      },
-    },
-  ],
-  links: [
-    {
-      source: "node1",
-      target: "node2",
-      directed: true,
-      strength: LinkStrength.Weak,
-    },
-  ],
-};
 </script>
 
 <template>
