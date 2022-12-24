@@ -16,15 +16,15 @@ let inputAddress = "0x1234567890123456789012345678901234567890";
 async function loadLayer() {
   const l = graph.nodes.length;
 
-  for (let i = 1; i < 2; i++) {
+  for (let i = 1; i < l; i++) {
     let loaded = await getTransactions(graph.nodes[i].payload.title);
-console.log(loaded)
+
     loaded.forEach((t) => {
       if (t.to_address != inputAddress) {
         graph.nodes.push({
           id: t.hash,
           shape: shapePattern,
-          payload: { title: t.from_address == graph.nodes[i].payload.title ? t.to_address : t.from_address, color: "#9575cd" },
+          payload: { title: t.from_address == graph.nodes[i].payload.title ? t.to_address : t.from_address, color: "cyan" },
         });
 
         graph.links.push({
@@ -37,12 +37,12 @@ console.log(loaded)
     });
   }
 
-  console.log(graph);
+  //console.log(graph);
 }
 
 onMounted(async () => {
   let transactions = await getTransactions(inputAddress);
-  console.log(transactions);
+  //console.log(transactions);
 
   const nodes: any[] = [],
     links: any[] = [];
@@ -50,14 +50,14 @@ onMounted(async () => {
   nodes.push({
     id: inputAddress,
     shape: shapePattern,
-    payload: { title: inputAddress, color: "#9575cd" },
+    payload: { title: inputAddress, color: "red" },
   });
 
   transactions.forEach((t) => {
     nodes.push({
       id: t.hash,
       shape: shapePattern,
-      payload: { title: t.from_address == inputAddress ? t.to_address : t.from_address, color: "#9575cd" },
+      payload: { title: t.from_address == inputAddress ? t.to_address : t.from_address, color: "blue" },
     });
 
     links.push({
@@ -77,7 +77,7 @@ onMounted(async () => {
   const simulation = new ForceSimulation(svgDraw);
   simulation.envGravity = -100;
   simulation.templateStore.add("hexagon", Hexagon);
-  //simulation.render(graph);
+
   await loadLayer();
   simulation.render(graph);
 });
