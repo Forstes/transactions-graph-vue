@@ -1,6 +1,12 @@
-export default {
-  shapeSize: 120,
-  shapeBuilder: shapeBuilder,
+const schema = {
+  type: "object",
+  properties: {
+    title: { type: "string" },
+    color: { type: "string" },
+    tags: { type: "array", items: { type: "string" } },
+    category: { enum: ["A", "B", "C"] },
+  },
+  required: ["title", "color"],
 };
 
 function shapeBuilder(data, TemplateAPI) {
@@ -15,11 +21,17 @@ function shapeBuilder(data, TemplateAPI) {
 	`);
   shape.select("path").style("fill", data.payload?.color ?? "#9575cd");
 
-  const titleShape = TextCollection(data.payload?.title ?? "", CollectionStyle(200, 240, 30, 100, 10, 10, 2), [
+  const titleShape = TextCollection(data.payload?.title ?? "", CollectionStyle(200, 540, 30, 180, 20, 60, 3), [
     ShapeStyle("class", "gly_text.light"),
-    ShapeStyle("font-size", "5em"),
+    ShapeStyle("font-size", "3em"),
   ]);
   shape.append(() => titleShape.node());
 
   return shape;
 }
+
+export default {
+  shapeSize: 70,
+  shapePayload: schema,
+  shapeBuilder: shapeBuilder,
+};

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ForceSimulation } from "@livereader/graphly-d3";
+import { ForceSimulation, Graph, LinkStrength } from "@livereader/graphly-d3";
 import "@livereader/graphly-d3/style.css";
 import { onMounted } from "vue";
 import Hexagon from "../scripts/hexagon";
@@ -11,7 +11,7 @@ onMounted(() => {
   simulation.render(graph);
 });
 
-const graph = {
+const graph: Graph = {
   nodes: [
     {
       id: "node1",
@@ -22,7 +22,7 @@ const graph = {
       x: -150,
       y: 30,
       payload: {
-        title: "",
+        title: "My Node 1",
         color: "#9575cd",
       },
     },
@@ -35,8 +35,8 @@ const graph = {
       x: 150,
       y: -30,
       payload: {
-        title: "",
-        color: "#9575cd",
+        title: "My Node 15151616777777",
+        color: "blue",
       },
     },
   ],
@@ -45,12 +45,12 @@ const graph = {
       source: "node1",
       target: "node2",
       directed: true,
-      strength: "weak",
+      strength: LinkStrength.Strong,
     },
   ],
 };
 </script>
 
 <template>
-  <svg ref="svgDraw" width="100%" height="100%"></svg>
+  <svg id="svgDraw" width="100%" height="100%"></svg>
 </template>
