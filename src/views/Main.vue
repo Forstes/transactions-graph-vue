@@ -6,15 +6,43 @@ import Hexagon from "../scripts/hexagon";
 import getTransactions from "../scripts/chain-data";
 
 let graph: Graph = { nodes: [], links: [] };
+const shapePattern = {
+  type: "hexagon",
+  scale: 1,
+};
+
 let inputAddress = "0x1234567890123456789012345678901234567890";
+
+async function loadLayer() {
+  const l = graph.nodes.length;
+
+  for (let i = 1; i < 2; i++) {
+    let loaded = await getTransactions(graph.nodes[i].payload.title);
+console.log(loaded)
+    loaded.forEach((t) => {
+      if (t.to_address != inputAddress) {
+        graph.nodes.push({
+          id: t.hash,
+          shape: shapePattern,
+          payload: { title: t.from_address == graph.nodes[i].payload.title ? t.to_address : t.from_address, color: "#9575cd" },
+        });
+
+        graph.links.push({
+          source: t.to_address == graph.nodes[i].payload.title ? t.hash : graph.nodes[i].id,
+          target: t.to_address == graph.nodes[i].payload.title ? graph.nodes[i].id : t.hash,
+          directed: true,
+          strength: LinkStrength.Weak,
+        });
+      }
+    });
+  }
+
+  console.log(graph);
+}
 
 onMounted(async () => {
   let transactions = await getTransactions(inputAddress);
-
-  const shapePattern = {
-    type: "hexagon",
-    scale: 1,
-  };
+  console.log(transactions);
 
   const nodes: any[] = [],
     links: any[] = [];
@@ -49,6 +77,8 @@ onMounted(async () => {
   const simulation = new ForceSimulation(svgDraw);
   simulation.envGravity = -100;
   simulation.templateStore.add("hexagon", Hexagon);
+  //simulation.render(graph);
+  await loadLayer();
   simulation.render(graph);
 });
 </script>
