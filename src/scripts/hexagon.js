@@ -31,7 +31,7 @@ function shapeBuilder(data, TemplateAPI) {
 }
 
 export default {
-  shapeSize: 70,
+  shapeSize: 50,
   shapePayload: schema,
   shapeBuilder: shapeBuilder,
 };
