@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ForceSimulation, Graph, LinkStrength } from "@livereader/graphly-d3";
 import "@livereader/graphly-d3/style.css";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import Hexagon from "../scripts/hexagon";
 import getTransactions from "../scripts/chain-data";
 
 const inputAddress = ref("0x1234567890123456789012345678901234567890");
+const depth = ref(1);
+
+let svgDraw, simulation;
 
 let graph: Graph = { nodes: [], links: [] };
 const shapePattern = {
@@ -13,36 +16,52 @@ const shapePattern = {
   scale: 1,
 };
 
-async function loadLayer() {
-  const l = graph.nodes.length;
+async function loadLayer(deep = 2) {
+  if (deep < 1) return;
+console.log(depth.value, deep)
+  if (deep > depth.value) {
+    const currD = graph.nodes.filter((n) => n.depth == depth.value);
+    depth.value++;
 
-  for (let i = 1; i < l; i++) {
-    let loaded = await getTransactions(graph.nodes[i].payload.title);
+    const color = getRandomColor();
 
-    loaded.forEach((t) => {
-      if (t.to_address != inputAddress.value) {
-        graph.nodes.push({
-          id: t.hash,
-          shape: shapePattern,
-          payload: { title: t.from_address == graph.nodes[i].payload.title ? t.to_address : t.from_address, color: "cyan" },
-        });
+    for (let i = 1; i < currD.length; i++) {
+      let loaded = await getTransactions(currD[i].payload.title);
 
-        graph.links.push({
-          source: t.to_address == graph.nodes[i].payload.title ? t.hash : graph.nodes[i].id,
-          target: t.to_address == graph.nodes[i].payload.title ? graph.nodes[i].id : t.hash,
-          directed: true,
-          strength: LinkStrength.Weak,
-        });
-      }
-    });
+      loaded.forEach((t) => {
+        if (t.to_address != inputAddress.value) {
+          graph.nodes.push({
+            id: t.hash,
+            shape: shapePattern,
+            payload: {
+              title: t.from_address == currD[i].payload.title ? t.to_address : t.from_address,
+              color,
+            },
+            depth: deep,
+          });
+
+          graph.links.push({
+            source: t.to_address == currD[i].payload.title ? t.hash : currD[i].id,
+            target: t.to_address == currD[i].payload.title ? currD[i].id : t.hash,
+            directed: true,
+            strength: LinkStrength.Strong,
+            depth: deep,
+          });
+        }
+      });
+    }
+    draw();
+  } else if (deep < depth.value) {
+    graph.nodes = graph.nodes.filter((n) => n.depth != depth.value);
+    graph.links = graph.links.filter((n) => n.depth != depth.value);
+    depth.value--;
+    draw();
   }
-
   //console.log(graph);
 }
 
-async function draw() {
+async function loadInitial() {
   let transactions = await getTransactions(inputAddress.value);
-  //console.log(transactions);
 
   const nodes: any[] = [],
     links: any[] = [];
@@ -51,6 +70,7 @@ async function draw() {
     id: inputAddress.value,
     shape: shapePattern,
     payload: { title: inputAddress.value, color: "red" },
+    depth: 0,
   });
 
   transactions.forEach((t) => {
@@ -58,33 +78,49 @@ async function draw() {
       id: t.hash,
       shape: shapePattern,
       payload: { title: t.from_address == inputAddress.value ? t.to_address : t.from_address, color: "blue" },
+      depth: depth.value,
     });
 
     links.push({
       source: t.to_address == inputAddress.value ? t.hash : inputAddress.value,
       target: t.to_address == inputAddress.value ? inputAddress.value : t.hash,
       directed: true,
-      type: "solid",
-      strength: LinkStrength.Weak,
+      strength: LinkStrength.Strong,
+      depth: depth.value,
     });
   });
 
   graph.links = links;
   graph.nodes = nodes;
 
-  const svgDraw = document.getElementById("svgDraw");
+  draw();
+}
 
-  const simulation = new ForceSimulation(svgDraw);
-  simulation.envGravity = -100;
+onMounted(() => {
+  svgDraw = document.getElementById("svgDraw");
+  simulation = new ForceSimulation(svgDraw);
+  simulation.envGravity = 100;
   simulation.templateStore.add("hexagon", Hexagon);
+});
 
-  await loadLayer();
+async function draw() {
   simulation.render(graph);
+}
+
+function getRandomColor() {
+  var letters = "0123456789ABCDEF";
+  var color = "#";
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
 }
 </script>
 
 <template>
   <input v-model="inputAddress" />
-  <button @click="draw()">Draw graph</button>
-  <svg id="svgDraw" width="100%" height="100%"></svg>
+  <button @click="loadInitial()">Draw graph</button>
+  <h5 style="margin-inline: 1rem">Depth: {{ depth }}</h5>
+  <button @click="loadLayer(depth + 1)">+</button><button @click="loadLayer(depth - 1)">-</button>
+  <svg id="svgDraw" width="100%" height="90%"></svg>
 </template>
