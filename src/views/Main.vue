@@ -7,6 +7,7 @@ import getTransactions from "../scripts/chain-data";
 
 const inputAddress = ref("0x1234567890123456789012345678901234567890");
 const depth = ref(1);
+const maxAddresses = 3;
 
 let svgDraw, simulation;
 
@@ -18,37 +19,41 @@ const shapePattern = {
 
 async function loadLayer(deep = 2) {
   if (deep < 1) return;
-console.log(depth.value, deep)
+
   if (deep > depth.value) {
     const currD = graph.nodes.filter((n) => n.depth == depth.value);
     depth.value++;
 
     const color = getRandomColor();
 
-    for (let i = 1; i < currD.length; i++) {
+    const iter = currD.length <= maxAddresses ? currD.length : maxAddresses;
+
+    for (let i = 1; i < iter; i++) {
       let loaded = await getTransactions(currD[i].payload.title);
 
-      loaded.forEach((t) => {
-        if (t.to_address != inputAddress.value) {
+      const iter2 = loaded.length <= maxAddresses ? loaded.length : maxAddresses;
+
+      for (let t = 0; t < iter2; t++) {
+        if (loaded[t].to_address != inputAddress.value) {
           graph.nodes.push({
-            id: t.hash,
+            id: loaded[t].hash,
             shape: shapePattern,
             payload: {
-              title: t.from_address == currD[i].payload.title ? t.to_address : t.from_address,
+              title: loaded[t].from_address == currD[i].payload.title ? loaded[t].to_address : loaded[t].from_address,
               color,
             },
             depth: deep,
           });
 
           graph.links.push({
-            source: t.to_address == currD[i].payload.title ? t.hash : currD[i].id,
-            target: t.to_address == currD[i].payload.title ? currD[i].id : t.hash,
+            source: loaded[t].to_address == currD[i].payload.title ? loaded[t].hash : currD[i].id,
+            target: loaded[t].to_address == currD[i].payload.title ? currD[i].id : loaded[t].hash,
             directed: true,
             strength: LinkStrength.Strong,
             depth: deep,
           });
         }
-      });
+      }
     }
     draw();
   } else if (deep < depth.value) {
@@ -99,7 +104,7 @@ async function loadInitial() {
 onMounted(() => {
   svgDraw = document.getElementById("svgDraw");
   simulation = new ForceSimulation(svgDraw);
-  simulation.envGravity = 100;
+  simulation.envGravity = 10;
   simulation.templateStore.add("hexagon", Hexagon);
 });
 
